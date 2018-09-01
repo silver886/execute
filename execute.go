@@ -130,7 +130,7 @@ func New(name string, arg ...string) (cmd *Cmd) {
 	cmd.Stdout = &cmd.bufout
 	cmd.Stderr = &cmd.buferr
 
-	return cmd
+	return
 }
 
 // Run starts the specified command and waits for it to complete
@@ -147,7 +147,7 @@ func Run(name string, arg ...string) (cmd *Cmd, err error) {
 func Start(name string, arg ...string) (cmd *Cmd, err error) {
 	cmd = New(name, arg...)
 	err = cmd.Start()
-	return cmd, err
+	return
 }
 
 // RunToLog run with log
