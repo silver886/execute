@@ -19,8 +19,12 @@ type Cmd struct {
 
 	bufout bytes.Buffer
 	buferr bytes.Buffer
+}
 
-	WorkDir string
+// WorkDir get the working directory
+func (cmd *Cmd) WorkDir() (workDir string) {
+	workDir, _ = filepath.Abs(cmd.Dir)
+	return
 }
 
 // ExitCode get the exit code
@@ -118,11 +122,8 @@ func New(name string, arg ...string) (cmd *Cmd) {
 
 	execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
-	workDir, _ := filepath.Abs(execCmd.Dir)
-
 	cmd = &Cmd{
-		Cmd:     execCmd,
-		WorkDir: workDir,
+		Cmd: execCmd,
 	}
 
 	cmd.Stdout = &cmd.bufout
