@@ -11,6 +11,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"leoliu.io/file"
+	"leoliu.io/logger"
 )
 
 // Cmd add some attributes on exec.Cmd
@@ -46,15 +47,15 @@ func (cmd *Cmd) Strerr() (strerr string) {
 }
 
 // RunToLog run with log
-func (cmd *Cmd) RunToLog(logger *logrus.Logger, level logrus.Level, msg string) (err error) {
-	if logger == nil {
+func (cmd *Cmd) RunToLog(extLogger *logrus.Logger, level logrus.Level, msg string) (err error) {
+	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
 	err = cmd.Run()
 
-	execLogger := logger.WithFields(logrus.Fields{
+	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(cmd.Args, " |: "),
 		"working directory": cmd.WorkDir,
@@ -64,28 +65,28 @@ func (cmd *Cmd) RunToLog(logger *logrus.Logger, level logrus.Level, msg string) 
 		"internal error":    err,
 	})
 
-	levelLog(execLogger, level, msg)
+	logger.LevelLog(execLogger, level, msg)
 
 	return
 }
 
 // StartToLog start with log
-func (cmd *Cmd) StartToLog(logger *logrus.Logger, level logrus.Level, msg string) (err error) {
-	if logger == nil {
+func (cmd *Cmd) StartToLog(extLogger *logrus.Logger, level logrus.Level, msg string) (err error) {
+	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
 	err = cmd.Start()
 
-	execLogger := logger.WithFields(logrus.Fields{
+	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(cmd.Args, " |: "),
 		"working directory": cmd.WorkDir,
 		"internal error":    err,
 	})
 
-	levelLog(execLogger, level, msg)
+	logger.LevelLog(execLogger, level, msg)
 
 	return
 }
@@ -104,8 +105,8 @@ func (cmd *Cmd) RunToFile(path string) (err error) {
 }
 
 // RunToFileLog run with log and store output to file
-func (cmd *Cmd) RunToFileLog(path string, logger *logrus.Logger, level logrus.Level, msg string) (err error) {
-	err = cmd.RunToLog(logger, level, msg)
+func (cmd *Cmd) RunToFileLog(path string, extLogger *logrus.Logger, level logrus.Level, msg string) (err error) {
+	err = cmd.RunToLog(extLogger, level, msg)
 
 	file.Writeln(path, cmd.Strout())
 
@@ -150,15 +151,15 @@ func Start(name string, arg ...string) (cmd *Cmd, err error) {
 }
 
 // RunToLog run with log
-func RunToLog(logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	if logger == nil {
+func RunToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
 	cmd, err = Run(name, arg...)
 
-	execLogger := logger.WithFields(logrus.Fields{
+	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(arg, " |: "),
 		"working directory": cmd.WorkDir,
@@ -168,28 +169,28 @@ func RunToLog(logger *logrus.Logger, level logrus.Level, msg string, name string
 		"internal error":    err,
 	})
 
-	levelLog(execLogger, level, msg)
+	logger.LevelLog(execLogger, level, msg)
 
 	return
 }
 
 // StartToLog start with log
-func StartToLog(logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	if logger == nil {
+func StartToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
 	cmd, err = Start(name, arg...)
 
-	execLogger := logger.WithFields(logrus.Fields{
+	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(arg, " |: "),
 		"working directory": cmd.WorkDir,
 		"internal error":    err,
 	})
 
-	levelLog(execLogger, level, msg)
+	logger.LevelLog(execLogger, level, msg)
 
 	return
 }
@@ -208,8 +209,8 @@ func RunToFile(path string, name string, arg ...string) (cmd *Cmd, err error) {
 }
 
 // RunToFileLog run with log and store output to file
-func RunToFileLog(path string, logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd, err = RunToLog(logger, level, msg, name, arg...)
+func RunToFileLog(path string, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+	cmd, err = RunToLog(extLogger, level, msg, name, arg...)
 
 	file.Writeln(path, cmd.Strout())
 
@@ -218,23 +219,4 @@ func RunToFileLog(path string, logger *logrus.Logger, level logrus.Level, msg st
 	}
 
 	return
-}
-
-func levelLog(entry *logrus.Entry, level logrus.Level, msg string) {
-	switch level {
-	case logrus.DebugLevel:
-		entry.Debugln(msg)
-	case logrus.InfoLevel:
-		entry.Infoln(msg)
-	case logrus.WarnLevel:
-		entry.Warnln(msg)
-	case logrus.ErrorLevel:
-		entry.Errorln(msg)
-	case logrus.FatalLevel:
-		entry.Fatalln(msg)
-	case logrus.PanicLevel:
-		entry.Panicln(msg)
-	default:
-		entry.Debugln(msg)
-	}
 }
