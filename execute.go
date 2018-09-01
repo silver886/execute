@@ -22,7 +22,7 @@ type Cmd struct {
 	buferr bytes.Buffer
 }
 
-// WorkDir get the working directory
+// WorkDir get the working_directory
 func (cmd *Cmd) WorkDir() (workDir string) {
 	workDir, _ = filepath.Abs(cmd.Dir)
 	return
@@ -58,11 +58,11 @@ func (cmd *Cmd) RunToLog(extLogger *logrus.Logger, level logrus.Level, msg strin
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(cmd.Args, " |: "),
-		"working directory": cmd.WorkDir(),
+		"working_directory": cmd.WorkDir(),
 		"exitcode":          cmd.ExitCode(),
 		"stdout":            cmd.Strout(),
 		"stderr":            cmd.Strerr(),
-		"internal error":    err,
+		"internal_error":    err,
 	})
 
 	logger.LevelLog(execLogger, level, msg)
@@ -82,8 +82,8 @@ func (cmd *Cmd) StartToLog(extLogger *logrus.Logger, level logrus.Level, msg str
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(cmd.Args, " |: "),
-		"working directory": cmd.WorkDir(),
-		"internal error":    err,
+		"working_directory": cmd.WorkDir(),
+		"internal_error":    err,
 	})
 
 	logger.LevelLog(execLogger, level, msg)
@@ -162,11 +162,11 @@ func RunToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name str
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(arg, " |: "),
-		"working directory": cmd.WorkDir(),
+		"working_directory": cmd.WorkDir(),
 		"exitcode":          cmd.ExitCode(),
 		"stdout":            cmd.Strout(),
 		"stderr":            cmd.Strerr(),
-		"internal error":    err,
+		"internal_error":    err,
 	})
 
 	logger.LevelLog(execLogger, level, msg)
@@ -186,8 +186,8 @@ func StartToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name s
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(arg, " |: "),
-		"working directory": cmd.WorkDir(),
-		"internal error":    err,
+		"working_directory": cmd.WorkDir(),
+		"internal_error":    err,
 	})
 
 	logger.LevelLog(execLogger, level, msg)
