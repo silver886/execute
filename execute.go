@@ -13,22 +13,57 @@ import (
 	"leoliu.io/file"
 )
 
-// Run starts the specified command and waits for it to complete
-func Run(name string, arg ...string) (cmd *exec.Cmd, exitCode int, strout string, strerr string, err error) {
-	var bufout, buferr bytes.Buffer
+// Cmd add some attributes on exec.Cmd
+type Cmd struct {
+	*exec.Cmd
 
-	cmd = execInit(name, arg...)
+	bufout bytes.Buffer
+	buferr bytes.Buffer
 
-	cmd.Stdout = &bufout
-	cmd.Stderr = &buferr
+	WorkDir string
+}
 
-	err = cmd.Run()
-
+// ExitCode get the exit code
+func (cmd *Cmd) ExitCode() (exitCode int) {
 	exitCode = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	return
+}
 
-	strout = strings.TrimSpace(bufout.String())
-	strerr = strings.TrimSpace(buferr.String())
+// Strout get the stdout as string
+func (cmd *Cmd) Strout() (strout string) {
+	strout = strings.TrimSpace(cmd.bufout.String())
+	return
+}
 
+// Strerr get the stderr as string
+func (cmd *Cmd) Strerr() (strerr string) {
+	strerr = strings.TrimSpace(cmd.buferr.String())
+	return
+}
+
+// New create a execute.Cmd
+func New(name string, arg ...string) (cmd *Cmd) {
+	execCmd := exec.Command(name, arg...)
+
+	execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+
+	workDir, _ := filepath.Abs(execCmd.Dir)
+
+	cmd = &Cmd{
+		Cmd:     execCmd,
+		WorkDir: workDir,
+	}
+
+	cmd.Stdout = &cmd.bufout
+	cmd.Stderr = &cmd.buferr
+
+	return cmd
+}
+
+// Run starts the specified command and waits for it to complete
+func Run(name string, arg ...string) (cmd *Cmd, err error) {
+	cmd = New(name, arg...)
+	err = cmd.Run()
 	return
 }
 
@@ -36,32 +71,28 @@ func Run(name string, arg ...string) (cmd *exec.Cmd, exitCode int, strout string
 //
 // The Wait method will return the exit code and release associated resources
 // once the command exits
-func Start(name string, arg ...string) (cmd *exec.Cmd, err error) {
-	cmd = execInit(name, arg...)
-
+func Start(name string, arg ...string) (cmd *Cmd, err error) {
+	cmd = New(name, arg...)
 	err = cmd.Start()
-
 	return cmd, err
 }
 
 // RunToLog run with log
-func RunToLog(logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *exec.Cmd, exitCode int, strout string, strerr string, err error) {
+func RunToLog(logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	if logger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
-	cmd, exitCode, strout, strerr, err = Run(name, arg...)
-
-	workDir, _ := filepath.Abs(cmd.Dir)
+	cmd, err = Run(name, arg...)
 
 	execLogger := logger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(arg, " |: "),
-		"working directory": workDir,
-		"exitcode":          cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(),
-		"stdout":            strout,
-		"stderr":            strerr,
+		"working directory": cmd.WorkDir,
+		"exitcode":          cmd.ExitCode(),
+		"stdout":            cmd.Strout(),
+		"stderr":            cmd.Strerr(),
 		"internal error":    err,
 	})
 
@@ -71,7 +102,7 @@ func RunToLog(logger *logrus.Logger, level logrus.Level, msg string, name string
 }
 
 // StartToLog start with log
-func StartToLog(logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *exec.Cmd, err error) {
+func StartToLog(logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	if logger == nil {
 		err = errors.New("Invalid logger")
 		return
@@ -79,12 +110,10 @@ func StartToLog(logger *logrus.Logger, level logrus.Level, msg string, name stri
 
 	cmd, err = Start(name, arg...)
 
-	workDir, _ := filepath.Abs(cmd.Dir)
-
 	execLogger := logger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
 		"args":              strings.Join(arg, " |: "),
-		"working directory": workDir,
+		"working directory": cmd.WorkDir,
 		"internal error":    err,
 	})
 
@@ -94,12 +123,12 @@ func StartToLog(logger *logrus.Logger, level logrus.Level, msg string, name stri
 }
 
 // RunToFile run and store output to file
-func RunToFile(path string, name string, arg ...string) (cmd *exec.Cmd, exitCode int, strout string, strerr string, err error) {
-	cmd, exitCode, strout, strerr, err = Run(name, arg...)
+func RunToFile(path string, name string, arg ...string) (cmd *Cmd, err error) {
+	cmd, err = Run(name, arg...)
 
-	file.Writeln(path, strout)
+	file.Writeln(path, cmd.Strout())
 
-	if strerr != "" {
+	if strerr := cmd.Strerr(); strerr != "" {
 		file.Writeln(path+".err", strerr)
 	}
 
@@ -107,24 +136,16 @@ func RunToFile(path string, name string, arg ...string) (cmd *exec.Cmd, exitCode
 }
 
 // RunToFileLog run with log and store output to file
-func RunToFileLog(path string, logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *exec.Cmd, exitCode int, strout string, strerr string, err error) {
-	cmd, exitCode, strout, strerr, err = RunToLog(logger, level, msg, name, arg...)
+func RunToFileLog(path string, logger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+	cmd, err = RunToLog(logger, level, msg, name, arg...)
 
-	file.Writeln(path, strout)
+	file.Writeln(path, cmd.Strout())
 
-	if strerr != "" {
+	if strerr := cmd.Strerr(); strerr != "" {
 		file.Writeln(path+".err", strerr)
 	}
 
 	return
-}
-
-func execInit(name string, arg ...string) *exec.Cmd {
-	cmd := exec.Command(name, arg...)
-
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-
-	return cmd
 }
 
 func levelLog(entry *logrus.Entry, level logrus.Level, msg string) {
