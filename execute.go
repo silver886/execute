@@ -41,6 +41,77 @@ func (cmd *Cmd) Strerr() (strerr string) {
 	return
 }
 
+// RunToLog run with log
+func (cmd *Cmd) RunToLog(logger *logrus.Logger, level logrus.Level, msg string) (err error) {
+	if logger == nil {
+		err = errors.New("Invalid logger")
+		return
+	}
+
+	err = cmd.Run()
+
+	execLogger := logger.WithFields(logrus.Fields{
+		"path":              cmd.Path,
+		"args":              strings.Join(cmd.Args, " |: "),
+		"working directory": cmd.WorkDir,
+		"exitcode":          cmd.ExitCode(),
+		"stdout":            cmd.Strout(),
+		"stderr":            cmd.Strerr(),
+		"internal error":    err,
+	})
+
+	levelLog(execLogger, level, msg)
+
+	return
+}
+
+// StartToLog start with log
+func (cmd *Cmd) StartToLog(logger *logrus.Logger, level logrus.Level, msg string) (err error) {
+	if logger == nil {
+		err = errors.New("Invalid logger")
+		return
+	}
+
+	err = cmd.Start()
+
+	execLogger := logger.WithFields(logrus.Fields{
+		"path":              cmd.Path,
+		"args":              strings.Join(cmd.Args, " |: "),
+		"working directory": cmd.WorkDir,
+		"internal error":    err,
+	})
+
+	levelLog(execLogger, level, msg)
+
+	return
+}
+
+// RunToFile run and store output to file
+func (cmd *Cmd) RunToFile(path string) (err error) {
+	err = cmd.Run()
+
+	file.Writeln(path, cmd.Strout())
+
+	if strerr := cmd.Strerr(); strerr != "" {
+		file.Writeln(path+".err", strerr)
+	}
+
+	return
+}
+
+// RunToFileLog run with log and store output to file
+func (cmd *Cmd) RunToFileLog(path string, logger *logrus.Logger, level logrus.Level, msg string) (err error) {
+	err = cmd.RunToLog(logger, level, msg)
+
+	file.Writeln(path, cmd.Strout())
+
+	if strerr := cmd.Strerr(); strerr != "" {
+		file.Writeln(path+".err", strerr)
+	}
+
+	return
+}
+
 // New create a execute.Cmd
 func New(name string, arg ...string) (cmd *Cmd) {
 	execCmd := exec.Command(name, arg...)
