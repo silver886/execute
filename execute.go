@@ -30,6 +30,9 @@ func (cmd *Cmd) WorkDir() (workDir string) {
 
 // ExitCode get the exit code
 func (cmd *Cmd) ExitCode() (exitCode int) {
+	if cmd.ProcessState == nil {
+		return
+	}
 	exitCode = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	return
 }
@@ -121,7 +124,7 @@ func (cmd *Cmd) RunToFileLog(path string, extLogger *logrus.Logger, level logrus
 func New(name string, arg ...string) (cmd *Cmd) {
 	execCmd := exec.Command(name, arg...)
 
-	execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	sysAttribute(execCmd)
 
 	cmd = &Cmd{
 		Cmd: execCmd,
