@@ -20,6 +20,9 @@ type Cmd struct {
 
 	bufout bytes.Buffer
 	buferr bytes.Buffer
+
+	stroutIndex []int
+	strerrIndex []int
 }
 
 // WorkDir get the working_directory
@@ -43,9 +46,65 @@ func (cmd *Cmd) Strout() (strout string) {
 	return
 }
 
+// StroutNext get unused stdout
+func (cmd *Cmd) StroutNext() (strout string) {
+	strout = cmd.Strout()
+	history := len(cmd.stroutIndex)
+	var pointer int
+	if history == 0 {
+		pointer = 0
+	} else {
+		pointer = cmd.stroutIndex[history-1]
+	}
+	cmd.stroutIndex = append(cmd.stroutIndex, len(strout))
+	strout = strout[pointer:]
+	return
+}
+
+// StroutHistory get stdout history access by StroutNext
+func (cmd *Cmd) StroutHistory() (strout []string) {
+	stroutFull := cmd.Strout()
+	for i, val := range cmd.stroutIndex {
+		if i == 0 {
+			strout = append(strout, stroutFull[:val])
+		} else {
+			strout = append(strout, stroutFull[cmd.stroutIndex[i-1]:val])
+		}
+	}
+	return
+}
+
 // Strerr get the stderr as string
 func (cmd *Cmd) Strerr() (strerr string) {
 	strerr = strings.TrimSpace(cmd.buferr.String())
+	return
+}
+
+// StrerrNext get unused stderr
+func (cmd *Cmd) StrerrNext() (strerr string) {
+	strerr = cmd.Strerr()
+	history := len(cmd.strerrIndex)
+	var pointer int
+	if history == 0 {
+		pointer = 0
+	} else {
+		pointer = cmd.strerrIndex[history-1]
+	}
+	cmd.strerrIndex = append(cmd.strerrIndex, len(strerr))
+	strerr = strerr[pointer:]
+	return
+}
+
+// StrerrHistory get stderr history access by StrerrNext
+func (cmd *Cmd) StrerrHistory() (strerr []string) {
+	strerrFull := cmd.Strerr()
+	for i, val := range cmd.strerrIndex {
+		if i == 0 {
+			strerr = append(strerr, strerrFull[:val])
+		} else {
+			strerr = append(strerr, strerrFull[cmd.strerrIndex[i-1]:val])
+		}
+	}
 	return
 }
 
