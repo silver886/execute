@@ -109,7 +109,7 @@ func (cmd *Cmd) StrerrHistory() (strerr []string) {
 }
 
 // RunToLog run with log
-func (cmd *Cmd) RunToLog(extLogger *logrus.Logger, level logrus.Level, msg string) (err error) {
+func (cmd *Cmd) RunToLog(extLogger *logger.Logger, level logrus.Level, msg string) (err error) {
 	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
@@ -133,7 +133,7 @@ func (cmd *Cmd) RunToLog(extLogger *logrus.Logger, level logrus.Level, msg strin
 }
 
 // StartToLog start with log
-func (cmd *Cmd) StartToLog(extLogger *logrus.Logger, level logrus.Level, msg string) (err error) {
+func (cmd *Cmd) StartToLog(extLogger *logger.Logger, level logrus.Level, msg string) (err error) {
 	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
@@ -167,7 +167,7 @@ func (cmd *Cmd) RunToFile(path string) (err error) {
 }
 
 // RunToFileLog run with log and store output to file
-func (cmd *Cmd) RunToFileLog(path string, extLogger *logrus.Logger, level logrus.Level, msg string) (err error) {
+func (cmd *Cmd) RunToFileLog(path string, extLogger *logger.Logger, level logrus.Level, msg string) (err error) {
 	err = cmd.RunToLog(extLogger, level, msg)
 
 	file.Writeln(path, cmd.Strout())
@@ -217,7 +217,7 @@ func Start(hide bool, name string, arg ...string) (cmd *Cmd, err error) {
 }
 
 // RunToLog run with log
-func RunToLog(hide bool, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+func RunToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
@@ -245,7 +245,7 @@ func RunToLog(hide bool, extLogger *logrus.Logger, level logrus.Level, msg strin
 }
 
 // StartToLog start with log
-func StartToLog(hide bool, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+func StartToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
@@ -287,7 +287,7 @@ func RunToFile(hide bool, path string, name string, arg ...string) (cmd *Cmd, er
 }
 
 // RunToFileLog run with log and store output to file
-func RunToFileLog(hide bool, path string, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+func RunToFileLog(hide bool, path string, extLogger *logger.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	cmd, err = RunToLog(hide, extLogger, level, msg, name, arg...)
 
 	file.Writeln(path, cmd.Strout())
