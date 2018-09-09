@@ -255,7 +255,7 @@ func StartToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg str
 	if hide {
 		cmd.Hide()
 	}
-	err = cmd.Run()
+	err = cmd.Start()
 
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
