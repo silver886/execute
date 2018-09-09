@@ -183,8 +183,6 @@ func (cmd *Cmd) RunToFileLog(path string, extLogger *logrus.Logger, level logrus
 func New(name string, arg ...string) (cmd *Cmd) {
 	execCmd := exec.Command(name, arg...)
 
-	sysAttribute(execCmd)
-
 	cmd = &Cmd{
 		Cmd: execCmd,
 	}

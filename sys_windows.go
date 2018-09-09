@@ -1,10 +1,10 @@
 package execute
 
 import (
-	"os/exec"
 	"syscall"
 )
 
-func sysAttribute(execCmd *exec.Cmd) {
-	execCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+// Hide set system process attribute with hide window
+func (cmd *Cmd) Hide() {
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 }
