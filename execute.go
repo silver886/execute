@@ -194,8 +194,11 @@ func New(name string, arg ...string) (cmd *Cmd) {
 }
 
 // Run starts the specified command and waits for it to complete
-func Run(name string, arg ...string) (cmd *Cmd, err error) {
+func Run(hide bool, name string, arg ...string) (cmd *Cmd, err error) {
 	cmd = New(name, arg...)
+	if hide {
+		cmd.Hide()
+	}
 	err = cmd.Run()
 	return
 }
@@ -204,20 +207,27 @@ func Run(name string, arg ...string) (cmd *Cmd, err error) {
 //
 // The Wait method will return the exit code and release associated resources
 // once the command exits
-func Start(name string, arg ...string) (cmd *Cmd, err error) {
+func Start(hide bool, name string, arg ...string) (cmd *Cmd, err error) {
 	cmd = New(name, arg...)
+	if hide {
+		cmd.Hide()
+	}
 	err = cmd.Start()
 	return
 }
 
 // RunToLog run with log
-func RunToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+func RunToLog(hide bool, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
-	cmd, err = Run(name, arg...)
+	cmd = New(name, arg...)
+	if hide {
+		cmd.Hide()
+	}
+	err = cmd.Run()
 
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
@@ -235,13 +245,17 @@ func RunToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name str
 }
 
 // StartToLog start with log
-func StartToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+func StartToLog(hide bool, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
 	if extLogger == nil {
 		err = errors.New("Invalid logger")
 		return
 	}
 
-	cmd, err = Start(name, arg...)
+	cmd = New(name, arg...)
+	if hide {
+		cmd.Hide()
+	}
+	err = cmd.Run()
 
 	execLogger := extLogger.WithFields(logrus.Fields{
 		"path":              cmd.Path,
@@ -256,8 +270,12 @@ func StartToLog(extLogger *logrus.Logger, level logrus.Level, msg string, name s
 }
 
 // RunToFile run and store output to file
-func RunToFile(path string, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd, err = Run(name, arg...)
+func RunToFile(hide bool, path string, name string, arg ...string) (cmd *Cmd, err error) {
+	cmd = New(name, arg...)
+	if hide {
+		cmd.Hide()
+	}
+	err = cmd.Run()
 
 	file.Writeln(path, cmd.Strout())
 
@@ -269,8 +287,8 @@ func RunToFile(path string, name string, arg ...string) (cmd *Cmd, err error) {
 }
 
 // RunToFileLog run with log and store output to file
-func RunToFileLog(path string, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd, err = RunToLog(extLogger, level, msg, name, arg...)
+func RunToFileLog(hide bool, path string, extLogger *logrus.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
+	cmd, err = RunToLog(hide, extLogger, level, msg, name, arg...)
 
 	file.Writeln(path, cmd.Strout())
 
