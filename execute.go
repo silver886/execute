@@ -117,15 +117,16 @@ func (cmd *Cmd) RunToLog(extLogger *logger.Logger, level logrus.Level, msg strin
 
 	err = cmd.Run()
 
-	execLogger := extLogger.WithFields(logrus.Fields{
-		"path":              cmd.Path,
-		"args":              strings.Join(cmd.Args, " |: "),
-		"working_directory": cmd.WorkDir(),
-		"exitcode":          cmd.ExitCode(),
-		"stdout":            cmd.Strout(),
-		"stderr":            cmd.Strerr(),
-		"internal_error":    err,
-	})
+	execLogger := extLogger.WithFields(
+		logger.DebugInfo(1, logrus.Fields{
+			"path":              cmd.Path,
+			"args":              strings.Join(cmd.Args, " |: "),
+			"working_directory": cmd.WorkDir(),
+			"exitcode":          cmd.ExitCode(),
+			"stdout":            cmd.Strout(),
+			"stderr":            cmd.Strerr(),
+			"internal_error":    err,
+		}))
 
 	logger.LevelLog(execLogger, level, msg)
 
@@ -141,12 +142,13 @@ func (cmd *Cmd) StartToLog(extLogger *logger.Logger, level logrus.Level, msg str
 
 	err = cmd.Start()
 
-	execLogger := extLogger.WithFields(logrus.Fields{
-		"path":              cmd.Path,
-		"args":              strings.Join(cmd.Args, " |: "),
-		"working_directory": cmd.WorkDir(),
-		"internal_error":    err,
-	})
+	execLogger := extLogger.WithFields(
+		logger.DebugInfo(1, logrus.Fields{
+			"path":              cmd.Path,
+			"args":              strings.Join(cmd.Args, " |: "),
+			"working_directory": cmd.WorkDir(),
+			"internal_error":    err,
+		}))
 
 	logger.LevelLog(execLogger, level, msg)
 
@@ -229,15 +231,16 @@ func RunToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg strin
 	}
 	err = cmd.Run()
 
-	execLogger := extLogger.WithFields(logrus.Fields{
-		"path":              cmd.Path,
-		"args":              strings.Join(arg, " |: "),
-		"working_directory": cmd.WorkDir(),
-		"exitcode":          cmd.ExitCode(),
-		"stdout":            cmd.Strout(),
-		"stderr":            cmd.Strerr(),
-		"internal_error":    err,
-	})
+	execLogger := extLogger.WithFields(
+		logger.DebugInfo(1, logrus.Fields{
+			"path":              cmd.Path,
+			"args":              strings.Join(arg, " |: "),
+			"working_directory": cmd.WorkDir(),
+			"exitcode":          cmd.ExitCode(),
+			"stdout":            cmd.Strout(),
+			"stderr":            cmd.Strerr(),
+			"internal_error":    err,
+		}))
 
 	logger.LevelLog(execLogger, level, msg)
 
@@ -257,12 +260,13 @@ func StartToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg str
 	}
 	err = cmd.Start()
 
-	execLogger := extLogger.WithFields(logrus.Fields{
-		"path":              cmd.Path,
-		"args":              strings.Join(arg, " |: "),
-		"working_directory": cmd.WorkDir(),
-		"internal_error":    err,
-	})
+	execLogger := extLogger.WithFields(
+		logger.DebugInfo(1, logrus.Fields{
+			"path":              cmd.Path,
+			"args":              strings.Join(arg, " |: "),
+			"working_directory": cmd.WorkDir(),
+			"internal_error":    err,
+		}))
 
 	logger.LevelLog(execLogger, level, msg)
 
