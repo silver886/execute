@@ -10,12 +10,12 @@ import (
 
 var (
 	intLog    bool
-	intLogger *logger.Logger
+	intLogger *logger.Entry
 )
 
 // SetLogger set internal logger for logging
 func SetLogger(extLogger *logger.Logger) {
-	intLogger = extLogger
+	intLogger = extLogger.WithField("prefix", "execute")
 	intLog = true
 }
 
