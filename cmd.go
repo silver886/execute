@@ -1,7 +1,6 @@
 package execute
 
 import (
-	"errors"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -23,24 +22,61 @@ type Cmd struct {
 	strerrIndex []int
 }
 
-// WorkDir get the working_directory
+// WorkDir get the working directory
 func (cmd *Cmd) WorkDir() (workDir string) {
 	workDir, _ = filepath.Abs(cmd.Dir)
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":               cmd,
+				"working_directory": workDir,
+			}),
+		).Debugln("Get the working directory")
+	}
+
 	return
 }
 
 // ExitCode get the exit code
 func (cmd *Cmd) ExitCode() (exitCode int) {
 	if cmd.ProcessState == nil {
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"cmd": cmd,
+				}),
+			).Errorln("Cannot get the exit code")
+		}
 		return
 	}
 	exitCode = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":       cmd,
+				"exit_code": exitCode,
+			}),
+		).Debugln("Get the exit code")
+	}
+
 	return
 }
 
 // Strout get the stdout as string
 func (cmd *Cmd) Strout() (strout string) {
 	strout = strings.TrimSpace(cmd.buildOut.String())
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":    cmd,
+				"stdout": strout,
+			}),
+		).Debugln("Get the stdout as string")
+	}
+
 	return
 }
 
@@ -56,6 +92,16 @@ func (cmd *Cmd) StroutNext() (strout string) {
 	}
 	cmd.stroutIndex = append(cmd.stroutIndex, len(strout))
 	strout = strout[pointer:]
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":           cmd,
+				"unused_stdout": strout,
+			}),
+		).Debugln("Get unused stdout")
+	}
+
 	return
 }
 
@@ -69,12 +115,32 @@ func (cmd *Cmd) StroutHistory() (strout []string) {
 			strout = append(strout, stroutFull[cmd.stroutIndex[i-1]:val])
 		}
 	}
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":            cmd,
+				"stdout_history": strout,
+			}),
+		).Debugln("Get get stdout history")
+	}
+
 	return
 }
 
 // Strerr get the stderr as string
 func (cmd *Cmd) Strerr() (strerr string) {
 	strerr = strings.TrimSpace(cmd.buildErr.String())
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":    cmd,
+				"stderr": strerr,
+			}),
+		).Debugln("Get the stderr as string")
+	}
+
 	return
 }
 
@@ -90,6 +156,16 @@ func (cmd *Cmd) StrerrNext() (strerr string) {
 	}
 	cmd.strerrIndex = append(cmd.strerrIndex, len(strerr))
 	strerr = strerr[pointer:]
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":           cmd,
+				"unused_stderr": strerr,
+			}),
+		).Debugln("Get unused stderr")
+	}
+
 	return
 }
 
@@ -103,77 +179,133 @@ func (cmd *Cmd) StrerrHistory() (strerr []string) {
 			strerr = append(strerr, strerrFull[cmd.strerrIndex[i-1]:val])
 		}
 	}
-	return
-}
 
-// RunToLog run with log
-func (cmd *Cmd) RunToLog(extLogger *logger.Logger, level logrus.Level, msg string) (err error) {
-	if extLogger == nil {
-		err = errors.New("Invalid logger")
-		return
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":            cmd,
+				"stderr_history": strerr,
+			}),
+		).Debugln("Get get stderr history")
 	}
 
-	err = cmd.Run()
+	return
+}
 
-	execLogger := extLogger.WithFields(
-		logger.DebugInfo(1, logrus.Fields{
-			"path":              cmd.Path,
-			"args":              strings.Join(cmd.Args, " |: "),
-			"working_directory": cmd.WorkDir(),
-			"exitcode":          cmd.ExitCode(),
-			"stdout":            cmd.Strout(),
-			"stderr":            cmd.Strerr(),
-			"internal_error":    err,
-		}))
+// Start starts the specified command but does not wait for it to complete
+func (cmd *Cmd) Start() (err error) {
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd": cmd,
+			}),
+		).Debugln("Start command . . .")
+	}
 
-	logger.LevelLog(execLogger, level, msg)
+	err = cmd.Cmd.Start()
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":               cmd,
+				"executable_path":   cmd.Path,
+				"arguments":         strings.Join(cmd.Args, " |: "),
+				"working_directory": cmd.WorkDir(),
+				"internal_error":    err,
+			}),
+		).Debugln("Start command")
+	}
 
 	return
 }
 
-// StartToLog start with log
-func (cmd *Cmd) StartToLog(extLogger *logger.Logger, level logrus.Level, msg string) (err error) {
-	if extLogger == nil {
-		err = errors.New("Invalid logger")
-		return
+// Run starts the specified command and waits for it to complete
+func (cmd *Cmd) Run() (err error) {
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd": cmd,
+			}),
+		).Debugln("Run command . . .")
 	}
 
 	err = cmd.Start()
+	if err != nil {
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"internal_error": err,
+				}),
+			).Errorln("Cannot start command")
+		}
+		return
+	}
 
-	execLogger := extLogger.WithFields(
-		logger.DebugInfo(1, logrus.Fields{
-			"path":              cmd.Path,
-			"args":              strings.Join(cmd.Args, " |: "),
-			"working_directory": cmd.WorkDir(),
-			"internal_error":    err,
-		}))
+	err = cmd.Wait()
 
-	logger.LevelLog(execLogger, level, msg)
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":            cmd,
+				"exit_code":      cmd.ExitCode(),
+				"stdout":         cmd.Strout(),
+				"stderr":         cmd.Strerr(),
+				"internal_error": err,
+			}),
+		).Debugln("Run command")
+	}
 
 	return
 }
 
 // RunToFile run and store output to file
 func (cmd *Cmd) RunToFile(path string) (err error) {
-	err = cmd.Run()
-
-	file.Writeln(path, cmd.Strout())
-
-	if strerr := cmd.Strerr(); strerr != "" {
-		file.Writeln(path+".err", strerr)
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":       cmd,
+				"file_path": path,
+			}),
+		).Debugln("Run command to file . . .")
 	}
 
-	return
-}
+	err = cmd.Run()
 
-// RunToFileLog run with log and store output to file
-func (cmd *Cmd) RunToFileLog(path string, extLogger *logger.Logger, level logrus.Level, msg string) (err error) {
-	err = cmd.RunToLog(extLogger, level, msg)
-
-	file.Writeln(path, cmd.Strout())
+	if _, err := file.Writeln(path, cmd.Strout()); err != nil {
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"internal_error": err,
+				}),
+			).Errorln("Cannot write to file")
+		}
+	}
 
 	if strerr := cmd.Strerr(); strerr != "" {
-		file.Writeln(path+".err", strerr)
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"file_path": path + ".err",
+				}),
+			).Debugln("Generate stderr file . . .")
+		}
+		if _, err := file.Writeln(path+".err", strerr); err != nil {
+			if intLog {
+				intLogger.WithFields(
+					logger.DebugInfo(1, logrus.Fields{
+						"internal_error": err,
+					}),
+				).Errorln("Cannot write to file")
+			}
+		}
+	}
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"internal_error": err,
+			}),
+		).Debugln("Run command to file")
 	}
 
 	return
@@ -181,6 +313,15 @@ func (cmd *Cmd) RunToFileLog(path string, extLogger *logger.Logger, level logrus
 
 // New create a execute.Cmd
 func New(name string, arg ...string) (cmd *Cmd) {
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"command":   name,
+				"arguments": arg,
+			}),
+		).Debugln("New command . . .")
+	}
+
 	execCmd := exec.Command(name, arg...)
 
 	cmd = &Cmd{
@@ -189,6 +330,14 @@ func New(name string, arg ...string) (cmd *Cmd) {
 
 	cmd.Stdout = &cmd.buildOut
 	cmd.Stderr = &cmd.buildErr
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd": cmd,
+			}),
+		).Debugln("New command")
+	}
 
 	return
 }

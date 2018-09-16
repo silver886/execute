@@ -1,7 +1,6 @@
 package execute
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -9,63 +8,33 @@ import (
 	"leoliu.io/logger"
 )
 
-// Run starts the specified command and waits for it to complete
-func Run(hide bool, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd = New(name, arg...)
-	if hide {
-		cmd.Hide()
-	}
-	err = cmd.Run()
-	return
+var (
+	intLog    bool
+	intLogger *logger.Logger
+)
+
+// SetLogger set internal logger for logging
+func SetLogger(extLogger *logger.Logger) {
+	intLogger = extLogger
+	intLog = true
+}
+
+// ResetLogger reset internal logger
+func ResetLogger() {
+	intLogger = nil
+	intLog = false
 }
 
 // Start starts the specified command but does not wait for it to complete
-//
-// The Wait method will return the exit code and release associated resources
-// once the command exits
 func Start(hide bool, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd = New(name, arg...)
-	if hide {
-		cmd.Hide()
-	}
-	err = cmd.Start()
-	return
-}
-
-// RunToLog run with log
-func RunToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	if extLogger == nil {
-		err = errors.New("Invalid logger")
-		return
-	}
-
-	cmd = New(name, arg...)
-	if hide {
-		cmd.Hide()
-	}
-	err = cmd.Run()
-
-	execLogger := extLogger.WithFields(
-		logger.DebugInfo(1, logrus.Fields{
-			"path":              cmd.Path,
-			"args":              strings.Join(arg, " |: "),
-			"working_directory": cmd.WorkDir(),
-			"exitcode":          cmd.ExitCode(),
-			"stdout":            cmd.Strout(),
-			"stderr":            cmd.Strerr(),
-			"internal_error":    err,
-		}))
-
-	logger.LevelLog(execLogger, level, msg)
-
-	return
-}
-
-// StartToLog start with log
-func StartToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	if extLogger == nil {
-		err = errors.New("Invalid logger")
-		return
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"hide":      hide,
+				"command":   name,
+				"arguments": arg,
+			}),
+		).Debugln("Start command . . .")
 	}
 
 	cmd = New(name, arg...)
@@ -74,44 +43,114 @@ func StartToLog(hide bool, extLogger *logger.Logger, level logrus.Level, msg str
 	}
 	err = cmd.Start()
 
-	execLogger := extLogger.WithFields(
-		logger.DebugInfo(1, logrus.Fields{
-			"path":              cmd.Path,
-			"args":              strings.Join(arg, " |: "),
-			"working_directory": cmd.WorkDir(),
-			"internal_error":    err,
-		}))
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":               cmd,
+				"executable_path":   cmd.Path,
+				"arguments":         strings.Join(arg, " |: "),
+				"working_directory": cmd.WorkDir(),
+				"internal_error":    err,
+			}),
+		).Debugln("Start command")
+	}
 
-	logger.LevelLog(execLogger, level, msg)
+	return
+}
+
+// Run starts the specified command and waits for it to complete
+func Run(hide bool, name string, arg ...string) (cmd *Cmd, err error) {
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"hide":      hide,
+				"command":   name,
+				"arguments": arg,
+			}),
+		).Debugln("Run command . . .")
+	}
+
+	cmd, err = Start(hide, name, arg...)
+	if err != nil {
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"cmd":            cmd,
+					"internal_error": err,
+				}),
+			).Errorln("Cannot start command")
+		}
+		return
+	}
+
+	err = cmd.Wait()
+
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":            cmd,
+				"exit_code":      cmd.ExitCode(),
+				"stdout":         cmd.Strout(),
+				"stderr":         cmd.Strerr(),
+				"internal_error": err,
+			}),
+		).Debugln("Run command")
+	}
 
 	return
 }
 
 // RunToFile run and store output to file
 func RunToFile(hide bool, path string, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd = New(name, arg...)
-	if hide {
-		cmd.Hide()
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"hide":      hide,
+				"file_path": path,
+				"command":   name,
+				"arguments": arg,
+			}),
+		).Debugln("Run command to file . . .")
 	}
-	err = cmd.Run()
 
-	file.Writeln(path, cmd.Strout())
+	cmd, err = Run(hide, name, arg...)
+
+	if _, err := file.Writeln(path, cmd.Strout()); err != nil {
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"internal_error": err,
+				}),
+			).Errorln("Cannot write to file")
+		}
+	}
 
 	if strerr := cmd.Strerr(); strerr != "" {
-		file.Writeln(path+".err", strerr)
+		if intLog {
+			intLogger.WithFields(
+				logger.DebugInfo(1, logrus.Fields{
+					"file_path": path + ".err",
+				}),
+			).Debugln("Generate stderr file . . .")
+		}
+		if _, err := file.Writeln(path+".err", strerr); err != nil {
+			if intLog {
+				intLogger.WithFields(
+					logger.DebugInfo(1, logrus.Fields{
+						"internal_error": err,
+					}),
+				).Errorln("Cannot write to file")
+			}
+		}
 	}
 
-	return
-}
-
-// RunToFileLog run with log and store output to file
-func RunToFileLog(hide bool, path string, extLogger *logger.Logger, level logrus.Level, msg string, name string, arg ...string) (cmd *Cmd, err error) {
-	cmd, err = RunToLog(hide, extLogger, level, msg, name, arg...)
-
-	file.Writeln(path, cmd.Strout())
-
-	if strerr := cmd.Strerr(); strerr != "" {
-		file.Writeln(path+".err", strerr)
+	if intLog {
+		intLogger.WithFields(
+			logger.DebugInfo(1, logrus.Fields{
+				"cmd":            cmd,
+				"internal_error": err,
+			}),
+		).Debugln("Run command to file")
 	}
 
 	return
