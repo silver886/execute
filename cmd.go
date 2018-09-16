@@ -23,20 +23,6 @@ type Cmd struct {
 	strerrIndex []int
 }
 
-// New create a execute.Cmd
-func New(name string, arg ...string) (cmd *Cmd) {
-	execCmd := exec.Command(name, arg...)
-
-	cmd = &Cmd{
-		Cmd: execCmd,
-	}
-
-	cmd.Stdout = &cmd.buildOut
-	cmd.Stderr = &cmd.buildErr
-
-	return
-}
-
 // WorkDir get the working_directory
 func (cmd *Cmd) WorkDir() (workDir string) {
 	workDir, _ = filepath.Abs(cmd.Dir)
@@ -189,6 +175,20 @@ func (cmd *Cmd) RunToFileLog(path string, extLogger *logger.Logger, level logrus
 	if strerr := cmd.Strerr(); strerr != "" {
 		file.Writeln(path+".err", strerr)
 	}
+
+	return
+}
+
+// New create a execute.Cmd
+func New(name string, arg ...string) (cmd *Cmd) {
+	execCmd := exec.Command(name, arg...)
+
+	cmd = &Cmd{
+		Cmd: execCmd,
+	}
+
+	cmd.Stdout = &cmd.buildOut
+	cmd.Stderr = &cmd.buildErr
 
 	return
 }
