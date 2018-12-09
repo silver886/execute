@@ -21,32 +21,27 @@ type Cmd struct {
 }
 
 // WorkDir get the working directory
-func (cmd *Cmd) WorkDir() (workDir string) {
-	workDir, _ = filepath.Abs(cmd.Dir)
-
-	return
+func (cmd *Cmd) WorkDir() string {
+	workDir, _ := filepath.Abs(cmd.Dir)
+	return workDir
 }
 
 // ExitCode get the exit code
-func (cmd *Cmd) ExitCode() (exitCode int) {
+func (cmd *Cmd) ExitCode() int {
 	if cmd.ProcessState == nil {
-		return
+		return -1
 	}
-	exitCode = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-
-	return
+	return cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
 // Strout get the stdout as string
-func (cmd *Cmd) Strout() (strout string) {
-	strout = strings.TrimSpace(cmd.buildOut.String())
-
-	return
+func (cmd *Cmd) Strout() string {
+	return strings.TrimSpace(cmd.buildOut.String())
 }
 
 // StroutNext get unused stdout
-func (cmd *Cmd) StroutNext() (strout string) {
-	strout = cmd.Strout()
+func (cmd *Cmd) StroutNext() string {
+	strout := cmd.Strout()
 	history := len(cmd.stroutIndex)
 	var pointer int
 	if history == 0 {
@@ -55,9 +50,7 @@ func (cmd *Cmd) StroutNext() (strout string) {
 		pointer = cmd.stroutIndex[history-1]
 	}
 	cmd.stroutIndex = append(cmd.stroutIndex, len(strout))
-	strout = strout[pointer:]
-
-	return
+	return strout[pointer:]
 }
 
 // StroutHistory get stdout history access by StroutNext
@@ -75,15 +68,13 @@ func (cmd *Cmd) StroutHistory() (strout []string) {
 }
 
 // Strerr get the stderr as string
-func (cmd *Cmd) Strerr() (strerr string) {
-	strerr = strings.TrimSpace(cmd.buildErr.String())
-
-	return
+func (cmd *Cmd) Strerr() string {
+	return strings.TrimSpace(cmd.buildErr.String())
 }
 
 // StrerrNext get unused stderr
-func (cmd *Cmd) StrerrNext() (strerr string) {
-	strerr = cmd.Strerr()
+func (cmd *Cmd) StrerrNext() string {
+	strerr := cmd.Strerr()
 	history := len(cmd.strerrIndex)
 	var pointer int
 	if history == 0 {
@@ -92,9 +83,7 @@ func (cmd *Cmd) StrerrNext() (strerr string) {
 		pointer = cmd.strerrIndex[history-1]
 	}
 	cmd.strerrIndex = append(cmd.strerrIndex, len(strerr))
-	strerr = strerr[pointer:]
-
-	return
+	return strerr[pointer:]
 }
 
 // StrerrHistory get stderr history access by StrerrNext
@@ -111,52 +100,28 @@ func (cmd *Cmd) StrerrHistory() (strerr []string) {
 	return
 }
 
-// Start starts the specified command but does not wait for it to complete
-func (cmd *Cmd) Start() (err error) {
-
-	err = cmd.Cmd.Start()
-
-	return
-}
-
-// Run starts the specified command and waits for it to complete
-func (cmd *Cmd) Run() (err error) {
-
-	err = cmd.Start()
-	if err != nil {
-		return
-	}
-
-	err = cmd.Wait()
-
-	return
-}
-
 // RunToFile run and store output to file
-func (cmd *Cmd) RunToFile(path string) (err error) {
-
-	err = cmd.Run()
+func (cmd *Cmd) RunToFile(path string) error {
+	cmd.Run()
 
 	if _, err := file.Writeln(path, cmd.Strout()); err != nil {
+		return err
 	}
 
 	if strerr := cmd.Strerr(); strerr != "" {
 		if _, err := file.Writeln(path+".err", strerr); err != nil {
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
 // New create a execute.Cmd
 func New(name string, arg ...string) (cmd *Cmd) {
-
-	execCmd := exec.Command(name, arg...)
-
 	cmd = &Cmd{
-		Cmd: execCmd,
+		Cmd: exec.Command(name, arg...),
 	}
-
 	cmd.Stdout = &cmd.buildOut
 	cmd.Stderr = &cmd.buildErr
 
