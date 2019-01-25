@@ -1,6 +1,7 @@
 package execute
 
 import (
+	"bytes"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,8 +14,8 @@ import (
 type Cmd struct {
 	*exec.Cmd
 
-	buildOut bytes.Buffer
-	buildErr bytes.Buffer
+	Out bytes.Buffer
+	Err bytes.Buffer
 
 	stroutIndex []int
 	strerrIndex []int
@@ -36,7 +37,7 @@ func (cmd *Cmd) ExitCode() int {
 
 // Strout get the stdout as string
 func (cmd *Cmd) Strout() string {
-	return strings.TrimSpace(cmd.buildOut.String())
+	return strings.TrimSpace(cmd.Out.String())
 }
 
 // StroutNext get unused stdout
@@ -69,7 +70,7 @@ func (cmd *Cmd) StroutHistory() (strout []string) {
 
 // Strerr get the stderr as string
 func (cmd *Cmd) Strerr() string {
-	return strings.TrimSpace(cmd.buildErr.String())
+	return strings.TrimSpace(cmd.Err.String())
 }
 
 // StrerrNext get unused stderr
@@ -122,8 +123,8 @@ func New(name string, arg ...string) (cmd *Cmd) {
 	cmd = &Cmd{
 		Cmd: exec.Command(name, arg...),
 	}
-	cmd.Stdout = &cmd.buildOut
-	cmd.Stderr = &cmd.buildErr
+	cmd.Stdout = &cmd.Out
+	cmd.Stderr = &cmd.Err
 
 	return
 }
