@@ -13,8 +13,8 @@ import (
 type Cmd struct {
 	*exec.Cmd
 
-	buildOut strings.Builder
-	buildErr strings.Builder
+	buildOut bytes.Buffer
+	buildErr bytes.Buffer
 
 	stroutIndex []int
 	strerrIndex []int
