@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	"leoliu.io/file"
+	"github.com/silver886/file"
 )
 
 // Cmd add some attributes on exec.Cmd
