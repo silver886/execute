@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/silver886/file"
@@ -13,6 +14,12 @@ import (
 // Cmd add some attributes on exec.Cmd
 type Cmd struct {
 	*exec.Cmd
+
+	wait struct {
+		mutex sync.Mutex
+		done  bool
+		err   error
+	}
 
 	Out bytes.Buffer
 	Err bytes.Buffer
@@ -116,6 +123,20 @@ func (cmd *Cmd) RunToFile(path string) error {
 	}
 
 	return nil
+}
+
+// Wait waits for the command to exit
+func (cmd *Cmd) Wait() error {
+	cmd.wait.mutex.Lock()
+
+	if !cmd.wait.done {
+		cmd.wait.err = cmd.Cmd.Wait()
+		cmd.wait.done = true
+	}
+
+	cmd.wait.mutex.Unlock()
+
+	return cmd.wait.err
 }
 
 // New create a execute.Cmd
