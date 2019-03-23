@@ -28,12 +28,12 @@ func Run(hide bool, name string, arg ...string) (*Cmd, error) {
 func RunToFile(hide bool, path string, name string, arg ...string) (*Cmd, error) {
 	cmd, err := Run(hide, name, arg...)
 
-	if _, err := file.Writeln(path, cmd.Strout()); err != nil {
+	if _, err := file.Writeln(path, cmd.OutString()); err != nil {
 		return cmd, err
 	}
 
-	if strerr := cmd.Strerr(); strerr != "" {
-		if _, err := file.Writeln(path+".err", strerr); err != nil {
+	if errString := cmd.ErrString(); errString != "" {
+		if _, err := file.Writeln(path+".err", errString); err != nil {
 			return cmd, err
 		}
 	}

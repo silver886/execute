@@ -21,11 +21,11 @@ type Cmd struct {
 		err   error
 	}
 
-	Out bytes.Buffer
-	Err bytes.Buffer
+	OutBuffer bytes.Buffer
+	ErrBuffer bytes.Buffer
 
-	stroutIndex []int
-	strerrIndex []int
+	outStringIndex []int
+	errStringIndex []int
 }
 
 // WorkDir get the working directory
@@ -42,66 +42,66 @@ func (cmd *Cmd) ExitCode() int {
 	return cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-// Strout get the stdout as string
-func (cmd *Cmd) Strout() string {
-	return strings.TrimSpace(cmd.Out.String())
+// OutString get the stdout as string
+func (cmd *Cmd) OutString() string {
+	return strings.TrimSpace(cmd.OutBuffer.String())
 }
 
-// StroutNext get unused stdout
-func (cmd *Cmd) StroutNext() string {
-	strout := cmd.Strout()
-	history := len(cmd.stroutIndex)
+// OutStringNext get unused stdout
+func (cmd *Cmd) OutStringNext() string {
+	outString := cmd.OutString()
+	history := len(cmd.outStringIndex)
 	var pointer int
 	if history == 0 {
 		pointer = 0
 	} else {
-		pointer = cmd.stroutIndex[history-1]
+		pointer = cmd.outStringIndex[history-1]
 	}
-	cmd.stroutIndex = append(cmd.stroutIndex, len(strout))
-	return strout[pointer:]
+	cmd.outStringIndex = append(cmd.outStringIndex, len(outString))
+	return outString[pointer:]
 }
 
-// StroutHistory get stdout history access by StroutNext
-func (cmd *Cmd) StroutHistory() (strout []string) {
-	stroutFull := cmd.Strout()
-	for i, val := range cmd.stroutIndex {
+// OutStringHistory get stdout history access by OutStringNext
+func (cmd *Cmd) OutStringHistory() (outString []string) {
+	outStringFull := cmd.OutString()
+	for i, val := range cmd.outStringIndex {
 		if i == 0 {
-			strout = append(strout, stroutFull[:val])
+			outString = append(outString, outStringFull[:val])
 		} else {
-			strout = append(strout, stroutFull[cmd.stroutIndex[i-1]:val])
+			outString = append(outString, outStringFull[cmd.outStringIndex[i-1]:val])
 		}
 	}
 
 	return
 }
 
-// Strerr get the stderr as string
-func (cmd *Cmd) Strerr() string {
-	return strings.TrimSpace(cmd.Err.String())
+// ErrString get the stderr as string
+func (cmd *Cmd) ErrString() string {
+	return strings.TrimSpace(cmd.ErrBuffer.String())
 }
 
-// StrerrNext get unused stderr
-func (cmd *Cmd) StrerrNext() string {
-	strerr := cmd.Strerr()
-	history := len(cmd.strerrIndex)
+// ErrStringNext get unused stderr
+func (cmd *Cmd) ErrStringNext() string {
+	errString := cmd.ErrString()
+	history := len(cmd.errStringIndex)
 	var pointer int
 	if history == 0 {
 		pointer = 0
 	} else {
-		pointer = cmd.strerrIndex[history-1]
+		pointer = cmd.errStringIndex[history-1]
 	}
-	cmd.strerrIndex = append(cmd.strerrIndex, len(strerr))
-	return strerr[pointer:]
+	cmd.errStringIndex = append(cmd.errStringIndex, len(errString))
+	return errString[pointer:]
 }
 
-// StrerrHistory get stderr history access by StrerrNext
-func (cmd *Cmd) StrerrHistory() (strerr []string) {
-	strerrFull := cmd.Strerr()
-	for i, val := range cmd.strerrIndex {
+// ErrStringHistory get stderr history access by ErrStringNext
+func (cmd *Cmd) ErrStringHistory() (errString []string) {
+	errStringFull := cmd.ErrString()
+	for i, val := range cmd.errStringIndex {
 		if i == 0 {
-			strerr = append(strerr, strerrFull[:val])
+			errString = append(errString, errStringFull[:val])
 		} else {
-			strerr = append(strerr, strerrFull[cmd.strerrIndex[i-1]:val])
+			errString = append(errString, errStringFull[cmd.errStringIndex[i-1]:val])
 		}
 	}
 
@@ -112,12 +112,12 @@ func (cmd *Cmd) StrerrHistory() (strerr []string) {
 func (cmd *Cmd) RunToFile(path string) error {
 	cmd.Run()
 
-	if _, err := file.Writeln(path, cmd.Strout()); err != nil {
+	if _, err := file.Writeln(path, cmd.OutString()); err != nil {
 		return err
 	}
 
-	if strerr := cmd.Strerr(); strerr != "" {
-		if _, err := file.Writeln(path+".err", strerr); err != nil {
+	if errString := cmd.ErrString(); errString != "" {
+		if _, err := file.Writeln(path+".err", errString); err != nil {
 			return err
 		}
 	}
@@ -144,8 +144,8 @@ func New(name string, arg ...string) (cmd *Cmd) {
 	cmd = &Cmd{
 		Cmd: exec.Command(name, arg...),
 	}
-	cmd.Stdout = &cmd.Out
-	cmd.Stderr = &cmd.Err
+	cmd.Stdout = &cmd.OutBuffer
+	cmd.Stderr = &cmd.ErrBuffer
 
 	return
 }
