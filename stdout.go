@@ -22,8 +22,8 @@ func (cmd *Cmd) OutStringNext() string {
 }
 
 // OutStringHistory get stdout history access by OutStringNext
-func (cmd *Cmd) OutStringHistory() (outString []string) {
-	outStringFull := cmd.OutString()
+func (cmd *Cmd) OutStringHistory() []string {
+	outString, outStringFull := []string{}, cmd.OutString()
 	for i, val := range cmd.outStringIndex {
 		if i == 0 {
 			outString = append(outString, outStringFull[:val])
@@ -31,6 +31,5 @@ func (cmd *Cmd) OutStringHistory() (outString []string) {
 			outString = append(outString, outStringFull[cmd.outStringIndex[i-1]:val])
 		}
 	}
-
-	return
+	return outString
 }

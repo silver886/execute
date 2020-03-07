@@ -22,8 +22,8 @@ func (cmd *Cmd) ErrStringNext() string {
 }
 
 // ErrStringHistory get stderr history access by ErrStringNext
-func (cmd *Cmd) ErrStringHistory() (errString []string) {
-	errStringFull := cmd.ErrString()
+func (cmd *Cmd) ErrStringHistory() []string {
+	errString, errStringFull := []string{}, cmd.ErrString()
 	for i, val := range cmd.errStringIndex {
 		if i == 0 {
 			errString = append(errString, errStringFull[:val])
@@ -31,6 +31,5 @@ func (cmd *Cmd) ErrStringHistory() (errString []string) {
 			errString = append(errString, errStringFull[cmd.errStringIndex[i-1]:val])
 		}
 	}
-
-	return
+	return errString
 }

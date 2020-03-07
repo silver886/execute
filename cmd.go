@@ -26,14 +26,13 @@ type Cmd struct {
 }
 
 // New create a execute.Cmd
-func New(name string, arg ...string) (cmd *Cmd) {
-	cmd = &Cmd{
+func New(name string, arg ...string) *Cmd {
+	cmd := &Cmd{
 		Cmd: exec.Command(name, arg...),
 	}
-	cmd.Stdout = &cmd.OutBuffer
-	cmd.Stderr = &cmd.ErrBuffer
-
-	return
+	cmd.Cmd.Stdout = &cmd.OutBuffer
+	cmd.Cmd.Stderr = &cmd.ErrBuffer
+	return cmd
 }
 
 // WorkDir get the working directory
