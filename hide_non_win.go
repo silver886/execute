@@ -2,5 +2,5 @@
 
 package execute
 
-// Hide set system process attribute with hide window
-func (cmd *Cmd) Hide() {}
+// Hide does nothing on non Windows platforms
+func (cmd *Cmd) Hide() *Cmd { return cmd }

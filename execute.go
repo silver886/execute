@@ -4,29 +4,38 @@ import (
 	"github.com/silver886/file"
 )
 
-// Start starts the specified command but does not wait for it to complete
-func Start(hide bool, name string, arg ...string) (*Cmd, error) {
-	cmd := New(name, arg...)
-	if hide {
-		cmd.Hide()
-	}
-
-	return cmd, cmd.Start()
+// Start starts the command but does not wait for it to complete
+func (cmd *Cmd) Start() (*Cmd, error) {
+	return cmd, cmd.Cmd.Start()
 }
 
-// Run starts the specified command and waits for it to complete
-func Run(hide bool, name string, arg ...string) (*Cmd, error) {
-	cmd, err := Start(hide, name, arg...)
-	if err != nil {
-		return cmd, err
+// Wait waits for the command to exit
+func (cmd *Cmd) Wait() (*Cmd, error) {
+	cmd.wait.mutex.Lock()
+
+	if !cmd.wait.done {
+		cmd.wait.err = cmd.Cmd.Wait()
+		cmd.wait.done = true
 	}
 
-	return cmd, cmd.Wait()
+	cmd.wait.mutex.Unlock()
+
+	return cmd, cmd.wait.err
+}
+
+// Run starts the command and waits for it to complete
+func (cmd *Cmd) Run() (*Cmd, error) {
+	if _, err := cmd.Start(); err != nil {
+		return cmd, err
+	}
+	return cmd.Wait()
 }
 
 // RunToFile run and store output to file
-func RunToFile(hide bool, path string, name string, arg ...string) (*Cmd, error) {
-	cmd, err := Run(hide, name, arg...)
+func (cmd *Cmd) RunToFile(path string) (*Cmd, error) {
+	if _, err := cmd.Run(); err != nil {
+		return cmd, err
+	}
 
 	if _, err := file.Writeln(path, cmd.OutString()); err != nil {
 		return cmd, err
@@ -38,5 +47,5 @@ func RunToFile(hide bool, path string, name string, arg ...string) (*Cmd, error)
 		}
 	}
 
-	return cmd, err
+	return cmd, nil
 }
