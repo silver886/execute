@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 	"syscall"
 
@@ -40,72 +39,6 @@ func (cmd *Cmd) ExitCode() int {
 		return -1
 	}
 	return cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-}
-
-// OutString get the stdout as string
-func (cmd *Cmd) OutString() string {
-	return strings.TrimSpace(cmd.OutBuffer.String())
-}
-
-// OutStringNext get unused stdout
-func (cmd *Cmd) OutStringNext() string {
-	outString := cmd.OutString()
-	history := len(cmd.outStringIndex)
-	var pointer int
-	if history == 0 {
-		pointer = 0
-	} else {
-		pointer = cmd.outStringIndex[history-1]
-	}
-	cmd.outStringIndex = append(cmd.outStringIndex, len(outString))
-	return outString[pointer:]
-}
-
-// OutStringHistory get stdout history access by OutStringNext
-func (cmd *Cmd) OutStringHistory() (outString []string) {
-	outStringFull := cmd.OutString()
-	for i, val := range cmd.outStringIndex {
-		if i == 0 {
-			outString = append(outString, outStringFull[:val])
-		} else {
-			outString = append(outString, outStringFull[cmd.outStringIndex[i-1]:val])
-		}
-	}
-
-	return
-}
-
-// ErrString get the stderr as string
-func (cmd *Cmd) ErrString() string {
-	return strings.TrimSpace(cmd.ErrBuffer.String())
-}
-
-// ErrStringNext get unused stderr
-func (cmd *Cmd) ErrStringNext() string {
-	errString := cmd.ErrString()
-	history := len(cmd.errStringIndex)
-	var pointer int
-	if history == 0 {
-		pointer = 0
-	} else {
-		pointer = cmd.errStringIndex[history-1]
-	}
-	cmd.errStringIndex = append(cmd.errStringIndex, len(errString))
-	return errString[pointer:]
-}
-
-// ErrStringHistory get stderr history access by ErrStringNext
-func (cmd *Cmd) ErrStringHistory() (errString []string) {
-	errStringFull := cmd.ErrString()
-	for i, val := range cmd.errStringIndex {
-		if i == 0 {
-			errString = append(errString, errStringFull[:val])
-		} else {
-			errString = append(errString, errStringFull[cmd.errStringIndex[i-1]:val])
-		}
-	}
-
-	return
 }
 
 // RunToFile run and store output to file
