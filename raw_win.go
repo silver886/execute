@@ -9,8 +9,12 @@ import (
 
 // RawArgf set system process attribute with raw argument content formatter
 func (cmd *Cmd) RawArgf(format string, content ...interface{}) *Cmd {
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CmdLine: fmt.Sprintf(" "+format, content...),
+	if cmdLine := fmt.Sprintf(" "+format, content...); cmd.SysProcAttr != nil {
+		cmd.SysProcAttr.CmdLine = cmdLine
+	} else {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			CmdLine: cmdLine,
+		}
 	}
 	return cmd
 }
